@@ -1916,6 +1916,13 @@ std::string setAddonOptions()
     docToValue(drv8833RumbleOptions.dutyMin, doc, "drv8833RumbleDutyMin");
     docToValue(drv8833RumbleOptions.dutyMax, doc, "drv8833RumbleDutyMax");
 
+    EspUartBridgeOptions& espUartBridgeOptions = Storage::getInstance().getAddonOptions().espUartBridgeOptions;
+    docToValue(espUartBridgeOptions.enabled, doc, "EspUartBridgeAddonEnabled");
+    docToValue(espUartBridgeOptions.uartBlock, doc, "espUartBridgeUartBlock");
+    docToPin(espUartBridgeOptions.txPin, doc, "espUartBridgeTxPin");
+    docToPin(espUartBridgeOptions.rxPin, doc, "espUartBridgeRxPin");
+    docToValue(espUartBridgeOptions.baudRate, doc, "espUartBridgeBaudRate");
+
     TG16Options& tg16Options = Storage::getInstance().getAddonOptions().tg16Options;
     docToValue(tg16Options.enabled, doc, "TG16padAddonEnabled");
     docToPin(tg16Options.oePin, doc, "tg16PadOePin");
@@ -2373,6 +2380,13 @@ std::string getAddonOptions()
     writeDoc(doc, "drv8833RumblePWMFrequency", drv8833RumbleOptions.pwmFrequency);
     writeDoc(doc, "drv8833RumbleDutyMin", drv8833RumbleOptions.dutyMin);
     writeDoc(doc, "drv8833RumbleDutyMax", drv8833RumbleOptions.dutyMax);
+
+    const EspUartBridgeOptions& espUartBridgeOptions = Storage::getInstance().getAddonOptions().espUartBridgeOptions;
+    writeDoc(doc, "EspUartBridgeAddonEnabled", espUartBridgeOptions.enabled);
+    writeDoc(doc, "espUartBridgeUartBlock", espUartBridgeOptions.uartBlock);
+    writeDoc(doc, "espUartBridgeTxPin", cleanPin(espUartBridgeOptions.txPin));
+    writeDoc(doc, "espUartBridgeRxPin", cleanPin(espUartBridgeOptions.rxPin));
+    writeDoc(doc, "espUartBridgeBaudRate", espUartBridgeOptions.baudRate);
 
     TG16Options& tg16Options = Storage::getInstance().getAddonOptions().tg16Options;
     writeDoc(doc, "TG16padAddonEnabled", tg16Options.enabled);

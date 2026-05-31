@@ -286,6 +286,7 @@ src/addons/reactiveleds.cpp
 src/addons/rotaryencoder.cpp
 src/addons/reverse.cpp
 src/addons/drv8833_rumble.cpp
+src/addons/esp_uart_bridge.cpp
 src/addons/turbo.cpp
 src/addons/slider_socd.cpp
 src/addons/wiiext.cpp
@@ -328,6 +329,7 @@ ArduinoJson
 rndis
 hardware_adc
 hardware_pwm
+hardware_uart
 PicoPeripherals
 WiiExtension
 SNESpad

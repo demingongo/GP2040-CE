@@ -9,43 +9,44 @@
 ## Files to Create
 
 ### `proto/config.proto`
-- [ ] Add `EspUartBridgeOptions` message (enabled, uartBlock, txPin, rxPin, baudRate)
-- [ ] Add `espUartBridgeOptions` field (field 31) to `AddonOptions` message
+- [x] Add `EspUartBridgeOptions` message (enabled, uartBlock, txPin, rxPin, baudRate)
+- [x] Add `espUartBridgeOptions` field (field 31) to `AddonOptions` message
 
 ### `headers/addons/esp_uart_bridge.h`
-- [ ] Create file with `#ifndef` guards for all defaults (ENABLED, UART_BLOCK, TX_PIN, RX_PIN, BAUD)
-- [ ] Declare `EspUartBridgeAddon` class inheriting `GPAddon`
-- [ ] Declare private members (`uart_inst_t*`, `baudRate`, `txPin`, `rxPin`)
+- [x] Create file with `#ifndef` guards for all defaults (ENABLED, UART_BLOCK, TX_PIN, RX_PIN, BAUD)
+- [x] Declare `EspUartBridgeAddon` class inheriting `GPAddon`
+- [x] Declare private members (`uart_inst_t*`, `baudRate`, `txPin`, `rxPin`)
 
 ### `src/addons/esp_uart_bridge.cpp`
-- [ ] Implement `available()` — check enabled + valid pins via `isValidPin()`
-- [ ] Implement `setup()` — read options from storage, call `uart_init()`, `gpio_set_function()`, set baud rate
-- [ ] Implement `process()` — read `GetProcessedGamepad()->state`, pack 18-byte frame, XOR checksum, `uart_write_blocking()`
-- [ ] Implement empty stubs: `preprocess()`, `postprocess()`, `reinit()`
+- [x] Implement `available()` — check enabled + valid pins via `isValidPin()`
+- [x] Implement `setup()` — read options from storage, call `uart_init()`, `gpio_set_function()`, set baud rate
+- [x] Implement `process()` — read `GetProcessedGamepad()->state`, pack 18-byte frame, XOR checksum, `uart_write_blocking()`
+- [x] Implement empty stubs: `preprocess()`, `postprocess()`, `reinit()`
 
 ### `configs/Pico2EspBridge/BoardConfig.h`
-- [ ] Copy from `configs/Pico2/BoardConfig.h`
-- [ ] Set `GPIO_PIN_26` and `GPIO_PIN_27` to `GpioAction::ASSIGNED_TO_ADDON`
-- [ ] Add `ESP_UART_BRIDGE_*` defines (ENABLED=1, UART_BLOCK=1, TX_PIN=26, RX_PIN=27, BAUD=1000000)
+- [x] Copy from `configs/Pico2/BoardConfig.h`
+- [x] Set `GPIO_PIN_20` and `GPIO_PIN_21` to `GpioAction::ASSIGNED_TO_ADDON` (UART1 TX/RX — GPIO 26/27 are CTS/RTS only, not usable for data)
+- [x] A1/A2 buttons sacrificed to free GPIO 20/21 for UART
+- [x] Add `ESP_UART_BRIDGE_*` defines (ENABLED=1, UART_BLOCK=1, TX_PIN=20, RX_PIN=21, BAUD=1000000)
 
 ### `configs/Pico2EspBridge/Pico2EspBridge.cmake`
-- [ ] Create file: `set(PICO_BOARD pico2)` + `set(PICO_PLATFORM rp2350-arm-s)`
+- [x] Create file: `set(PICO_BOARD pico2)` + `set(PICO_PLATFORM rp2350-arm-s)`
 
 ---
 
 ## Files to Modify
 
 ### `src/gp2040aux.cpp`
-- [ ] Add `#include "addons/esp_uart_bridge.h"`
-- [ ] Add `addons.LoadAddon(new EspUartBridgeAddon())` in `setup()`
+- [x] Add `#include "addons/esp_uart_bridge.h"`
+- [x] Add `addons.LoadAddon(new EspUartBridgeAddon())` in `setup()`
 
 ### `CMakeLists.txt`
-- [ ] Add `src/addons/esp_uart_bridge.cpp` to `add_executable` source list
-- [ ] Verify `hardware_uart` is in `target_link_libraries` (add if missing)
+- [x] Add `src/addons/esp_uart_bridge.cpp` to `add_executable` source list
+- [x] Verify `hardware_uart` is in `target_link_libraries` (add if missing)
 
 ### `src/webconfig.cpp` *(optional)*
-- [ ] Add `EspUartBridgeOptions` read handler in `/api/addons/get`
-- [ ] Add `EspUartBridgeOptions` write handler in `/api/addons/set`
+- [x] Add `EspUartBridgeOptions` read handler in `/api/addons/get`
+- [x] Add `EspUartBridgeOptions` write handler in `/api/addons/set`
 
 ---
 
@@ -60,7 +61,7 @@
 ## Hardware Validation
 
 - [ ] Flash `Pico2EspBridge` firmware to Pico2
-- [ ] Wire Pico2 GPIO 26 (TX) → ESP32 RX, GPIO 27 (RX) → ESP32 TX, GND → GND
+- [ ] Wire Pico2 GPIO 20 (UART1 TX, physical pin 26) → ESP32 RX, GPIO 21 (UART1 RX, physical pin 27) → ESP32 TX, GND → GND
 - [ ] Flash esp-gamepad firmware to ESP32
 - [ ] Confirm UART frames are transmitted (logic analyzer or Serial monitor on ESP32)
 - [ ] Confirm XOR checksum passes on every frame

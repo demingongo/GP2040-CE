@@ -908,6 +908,15 @@ message HETriggerOptions
     optional int32 smoothingFactor = 13;
 }
 
+message EspUartBridgeOptions
+{
+    optional bool enabled = 1 [default = false];
+    optional int32 uartBlock = 2 [default = 1];
+    optional int32 txPin = 3 [default = -1];
+    optional int32 rxPin = 4 [default = -1];
+    optional uint32 baudRate = 5 [default = 1000000];
+}
+
 message AddonOptions
 {
     optional BootselButtonOptions bootselButtonOptions = 1;
@@ -940,6 +949,7 @@ message AddonOptions
     optional GamepadUSBHostOptions gamepadUSBHostOptions = 28;
     optional TG16Options tg16Options = 29;
     optional HETriggerOptions heTriggerOptions = 30;
+    optional EspUartBridgeOptions espUartBridgeOptions = 31;
 }
 
 message MigrationHistory

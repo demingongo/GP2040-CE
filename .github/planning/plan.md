@@ -78,13 +78,15 @@ A new board config derived from the standard Pico2 config.
 **Purpose:** Provide a ready-to-use build target for a Pico2 wired to an ESP32. Frees two GPIO pins for UART and enables the addon.
 
 Key differences from `configs/Pico2/BoardConfig.h`:
-- `GPIO_PIN_26` and `GPIO_PIN_27` → `GpioAction::ASSIGNED_TO_ADDON` (UART1 TX/RX; these are free on Pico2 and map to UART1)
+- `GPIO_PIN_20` and `GPIO_PIN_21` → `GpioAction::ASSIGNED_TO_ADDON` — these are the **actual UART1 TX/RX pins** on RP2350 (function F2). GPIO 26/27 are UART1 **CTS/RTS** (flow control only) and cannot carry data.
+- A1 (Guide/Home/PS) and A2 (Capture) buttons are sacrificed to free these pins.
+- GPIO 26 and 27 are left undefined (same as stock Pico2 — they are CTS/RTS and unused).
 - Add:
   ```c
   #define ESP_UART_BRIDGE_ENABLED    1
   #define ESP_UART_BRIDGE_UART_BLOCK 1
-  #define ESP_UART_BRIDGE_TX_PIN     26
-  #define ESP_UART_BRIDGE_RX_PIN     27
+  #define ESP_UART_BRIDGE_TX_PIN     20   // UART1 TX (RP2350 F2) — physical pin 26 on Pico2
+  #define ESP_UART_BRIDGE_RX_PIN     21   // UART1 RX (RP2350 F2) — physical pin 27 on Pico2
   #define ESP_UART_BRIDGE_BAUD       1000000
   ```
 
