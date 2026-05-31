@@ -57,6 +57,10 @@ import ReactiveLED, {
 	reactiveLEDState,
 } from '../Addons/ReactiveLED';
 import TG16, { tg16State } from '../Addons/TG16';
+import EspUartBridge, {
+	espUartBridgeScheme,
+	espUartBridgeState,
+} from '../Addons/EspUartBridge';
 import HETrigger, {
 	HETriggerScheme,
 	HETriggerState,
@@ -91,6 +95,7 @@ const schema = yup.object().shape({
 	...reactiveLEDScheme,
 	...gamepadUSBHostScheme,
 	...HETriggerScheme,
+	...espUartBridgeScheme,
 });
 
 export const DEFAULT_VALUES = {
@@ -116,6 +121,7 @@ export const DEFAULT_VALUES = {
 	...reactiveLEDState,
 	...gamepadUSBHostState,
 	...HETriggerState,
+	...espUartBridgeState,
 } as const;
 
 const ADDONS = [
@@ -141,6 +147,7 @@ const ADDONS = [
 	DRV8833Rumble,
 	ReactiveLED,
 	HETrigger,
+	EspUartBridge,
 ];
 
 const FormContext = ({ setStoredData }) => {

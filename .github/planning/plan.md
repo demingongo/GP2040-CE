@@ -170,6 +170,56 @@ This follows the exact same pattern used for all other addons in this file (read
 
 ---
 
+### 9. `src/config_utils.cpp`
+
+**Purpose:** Seed `espUartBridgeOptions` defaults from BoardConfig.h macros into persistent storage on first boot. Without this block every other addon has `INIT_UNSET_PROPERTY` entries, but the ESP32 UART Bridge was missing them, causing `options.enabled` to always be `false` at runtime regardless of `ESP_UART_BRIDGE_ENABLED` in BoardConfig.h — the addon would never start and the web configurator would not show it.
+
+Add near the end of the init function (after `tg16Options`):
+```cpp
+// addonOptions.espUartBridgeOptions
+INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, enabled, !!ESP_UART_BRIDGE_ENABLED);
+INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, uartBlock, ESP_UART_BRIDGE_UART_BLOCK);
+INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, txPin, (Pin_t)ESP_UART_BRIDGE_TX_PIN);
+INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, rxPin, (Pin_t)ESP_UART_BRIDGE_RX_PIN);
+INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, baudRate, ESP_UART_BRIDGE_BAUD);
+```
+
+Also add `#include "addons/esp_uart_bridge.h"` alongside the other addon includes at the top of the file.
+
+---
+
+### 10. Web configurator UI
+
+**New file: `www/src/Addons/EspUartBridge.tsx`**
+
+React component following the same pattern as `TG16.tsx`. Exports:
+- `espUartBridgeScheme` — Yup validation (currently empty, fields are plain numbers)
+- `espUartBridgeState` — default form values matching the protobuf field names used by `webconfig.cpp`
+- `EspUartBridge` — section component with enable toggle and four numeric inputs
+
+**Modified: `www/src/Locales/en/AddonsConfig.jsx`**
+
+Add translation strings:
+- `esp-uart-bridge-header-text`
+- `esp-uart-bridge-uart-block-label`
+- `esp-uart-bridge-tx-pin-label`
+- `esp-uart-bridge-rx-pin-label`
+- `esp-uart-bridge-baud-rate-label`
+
+**Modified: `www/src/Pages/AddonsConfigPage.tsx`**
+
+Import component and spread its scheme/state into the page's validation schema, `DEFAULT_VALUES`, and `ADDONS` render list.
+
+---
+
+### 11. `www/src/Store/useSystemStats.ts` — bug fix
+
+**Problem:** All three fetches (local firmware API, local memory API, GitHub releases API) were in a single `Promise.all`. Any GitHub API failure (rate limit, no internet) caused the entire home page to show nothing.
+
+**Fix:** Split the fetches — local stats are fetched together (blocking), then the GitHub releases call runs independently with `.catch(() => null)`. Home page always renders local stats; latest-version fields are empty only if GitHub is unreachable.
+
+---
+
 ## Build & Test Sequence
 
 1. Create branch: `git checkout -b feat/esp32-uart-bridge`

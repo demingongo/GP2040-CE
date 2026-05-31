@@ -69,26 +69,32 @@ const useSystemStats = create<State & Actions>()((set) => ({
 		set({ loading: true });
 
 		try {
-			const [firmwareVersion, memoryReport, latestRelease] = await Promise.all([
+			const [firmwareVersion, memoryReport] = await Promise.all([
 				fetch(`${baseUrl}/api/getFirmwareVersion`).then((res) => res.json()),
 				fetch(`${baseUrl}/api/getMemoryReport`).then((res) => res.json()),
-				fetch(
-					'https://api.github.com/repos/OpenStickCommunity/GP2040-CE/releases/latest',
-				).then((res) => res.json()),
 			]);
-			const latestDownloadUrl =
-				latestRelease.assets?.find(
-					({ name }: { name: string }) =>
-						name
-							?.substring(name.lastIndexOf('_') + 1)
-							?.replace('.uf2', '')
-							?.toLowerCase() === firmwareVersion.boardConfig.toLowerCase(),
-				)?.browser_download_url ||
-				`https://github.com/OpenStickCommunity/GP2040-CE/releases/tag/${latestRelease.tag_name}`;
+
+			// GitHub API is optional — failure must not block local stats from rendering
+			const latestRelease = await fetch(
+				'https://api.github.com/repos/OpenStickCommunity/GP2040-CE/releases/latest',
+			)
+				.then((res) => res.json())
+				.catch(() => null);
+
+			const latestDownloadUrl = latestRelease
+				? latestRelease.assets?.find(
+						({ name }: { name: string }) =>
+							name
+								?.substring(name.lastIndexOf('_') + 1)
+								?.replace('.uf2', '')
+								?.toLowerCase() === firmwareVersion.boardConfig.toLowerCase(),
+					)?.browser_download_url ||
+					`https://github.com/OpenStickCommunity/GP2040-CE/releases/tag/${latestRelease.tag_name}`
+				: '';
 
 			set({
 				currentVersion: firmwareVersion.version,
-				latestVersion: latestRelease.tag_name,
+				latestVersion: latestRelease?.tag_name ?? '',
 				latestDownloadUrl,
 				boardConfigProperties: {
 					label: firmwareVersion.boardConfigLabel,

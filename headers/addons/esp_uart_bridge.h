@@ -40,6 +40,7 @@ private:
     uint32_t baudRate;
     int txPin;
     int rxPin;
+    bool uartReady = false;
 };
 
 #endif

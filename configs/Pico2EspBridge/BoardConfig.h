@@ -44,13 +44,15 @@
 #define GPIO_PIN_28 GpioAction::ASSIGNED_TO_ADDON
 
 // ESP32 UART Bridge addon
-// GPIO 20 = UART1 TX (RP2350 function F2), GPIO 21 = UART1 RX (RP2350 function F2).
-// These are the correct UART1 data pins on Pico2; GPIO 26/27 are CTS/RTS only.
+// DIAGNOSTIC: using UART0 on GPIO 0/1 to verify addon is running.
+// If this works, the issue is UART1/GPIO20 specific.
+// Restore to: UART_BLOCK=1, TX_PIN=20, RX_PIN=21 once confirmed.
 #define ESP_UART_BRIDGE_ENABLED    1
-#define ESP_UART_BRIDGE_UART_BLOCK 1
-#define ESP_UART_BRIDGE_TX_PIN     20
-#define ESP_UART_BRIDGE_RX_PIN     21
-#define ESP_UART_BRIDGE_BAUD       1000000
+#define ESP_UART_BRIDGE_UART_BLOCK 0
+#define ESP_UART_BRIDGE_TX_PIN     0
+#define ESP_UART_BRIDGE_RX_PIN     1
+//#define ESP_UART_BRIDGE_BAUD       1000000
+#define ESP_UART_BRIDGE_BAUD  115200   // HC-06 set to 115200 via AT+BAUD8; revert to 1000000 for production ESP32
 
 // Keyboard Mapping Configuration
 //                                            // GP2040 | Xinput | Switch  | PS3/4/5  | Dinput | Arcade |

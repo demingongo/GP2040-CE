@@ -48,6 +48,26 @@
 - [x] Add `EspUartBridgeOptions` read handler in `/api/addons/get`
 - [x] Add `EspUartBridgeOptions` write handler in `/api/addons/set`
 
+### `src/config_utils.cpp`
+- [x] Add `#include "addons/esp_uart_bridge.h"`
+- [x] Add `INIT_UNSET_PROPERTY` block for `espUartBridgeOptions` (enabled, uartBlock, txPin, rxPin, baudRate) so BoardConfig.h defaults are seeded into storage on first boot
+
+### `www/src/Addons/EspUartBridge.tsx` *(new file)*
+- [x] Create React addon component with enable toggle and fields for UART block, TX pin, RX pin, baud rate
+- [x] Export `espUartBridgeScheme`, `espUartBridgeState`, and default component
+
+### `www/src/Locales/en/AddonsConfig.jsx`
+- [x] Add translation strings for ESP32 UART Bridge section header and all field labels
+
+### `www/src/Pages/AddonsConfigPage.tsx`
+- [x] Import `EspUartBridge`, `espUartBridgeScheme`, `espUartBridgeState`
+- [x] Spread `espUartBridgeScheme` into validation schema
+- [x] Spread `espUartBridgeState` into `DEFAULT_VALUES`
+- [x] Add `EspUartBridge` to `ADDONS` render list
+
+### `www/src/Store/useSystemStats.ts`
+- [x] Fix: decouple GitHub releases API fetch from local stats — failure no longer blocks home page from rendering
+
 ---
 
 ## Build
@@ -55,6 +75,13 @@
 - [x] Run `cmake` — verify protobuf regenerates cleanly (`config.pb.h` / `config.pb.c`)
 - [x] Build with `GP2040_BOARDCONFIG=Pico2EspBridge` — no errors
 - [ ] Build with default `Pico` config — no regressions (addon disabled by default)
+
+## Web Configurator
+
+- [x] Home page system stats render even when GitHub API is unreachable
+- [x] Add-Ons page shows "ESP32 UART Bridge Configuration" section
+- [x] Toggle enables/disables addon; UART block, TX pin, RX pin, baud rate are editable
+- [ ] Save settings via web UI and confirm persistence across reboot
 
 ---
 

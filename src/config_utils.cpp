@@ -37,6 +37,7 @@
 #include "addons/gamepad_usb_host.h"
 #include "addons/he_trigger.h"
 #include "addons/tg16_input.h"
+#include "addons/esp_uart_bridge.h"
 
 #include "CRC32.h"
 #include "FlashPROM.h"
@@ -1158,6 +1159,13 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin1, TG16_PAD_DATA_PIN1);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin2, TG16_PAD_DATA_PIN2);
     INIT_UNSET_PROPERTY(config.addonOptions.tg16Options, dataPin3, TG16_PAD_DATA_PIN3);
+
+    // addonOptions.espUartBridgeOptions
+    INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, enabled, !!ESP_UART_BRIDGE_ENABLED);
+    INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, uartBlock, ESP_UART_BRIDGE_UART_BLOCK);
+    INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, txPin, (Pin_t)ESP_UART_BRIDGE_TX_PIN);
+    INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, rxPin, (Pin_t)ESP_UART_BRIDGE_RX_PIN);
+    INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, baudRate, ESP_UART_BRIDGE_BAUD);
 }
 
 

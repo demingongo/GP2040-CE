@@ -39,13 +39,14 @@ void GP2040Aux::setup() {
 	}
 
 	// Setup Add-ons
-	addons.LoadAddon(new DisplayAddon());
-	addons.LoadAddon(new NeoPicoLEDAddon());
-	addons.LoadAddon(new PlayerLEDAddon());
-	addons.LoadAddon(new BoardLedAddon());
-	addons.LoadAddon(new BuzzerSpeakerAddon());
-	addons.LoadAddon(new DRV8833RumbleAddon());
-	addons.LoadAddon(new ReactiveLEDAddon());
+	// DEBUG: all other addons commented out to isolate EspUartBridge
+	//addons.LoadAddon(new DisplayAddon());
+	//addons.LoadAddon(new NeoPicoLEDAddon());
+	//addons.LoadAddon(new PlayerLEDAddon());
+	//addons.LoadAddon(new BoardLedAddon());
+	//addons.LoadAddon(new BuzzerSpeakerAddon());
+	//addons.LoadAddon(new DRV8833RumbleAddon());
+	//addons.LoadAddon(new ReactiveLEDAddon());
 	addons.LoadAddon(new EspUartBridgeAddon());
 
 	// Ready to sync Core0 and Core1
