@@ -52,8 +52,8 @@
 
 ## Build
 
-- [ ] Run `cmake` — verify protobuf regenerates cleanly (`config.pb.h` / `config.pb.c`)
-- [ ] Build with `GP2040_BOARDCONFIG=Pico2EspBridge` — no errors
+- [x] Run `cmake` — verify protobuf regenerates cleanly (`config.pb.h` / `config.pb.c`)
+- [x] Build with `GP2040_BOARDCONFIG=Pico2EspBridge` — no errors
 - [ ] Build with default `Pico` config — no regressions (addon disabled by default)
 
 ---
