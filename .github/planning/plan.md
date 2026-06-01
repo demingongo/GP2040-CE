@@ -8,6 +8,27 @@ The Pico2 continues to function as a normal USB gamepad simultaneously.
 
 ---
 
+## Status
+
+| Item | Status |
+|---|---|
+| UART frame protocol defined | ✅ done |
+| `esp_uart_bridge.h` / `.cpp` | ✅ done |
+| `configs/Pico2EspBridge/BoardConfig.h` | ✅ done |
+| `configs/Pico2EspBridge/Pico2EspBridge.cmake` | ✅ done |
+| `proto/config.proto` — `EspUartBridgeOptions` | ✅ done |
+| `src/gp2040aux.cpp` — addon registered | ✅ done |
+| `src/config_utils.cpp` — `INIT_UNSET_PROPERTY` | ✅ done |
+| `src/webconfig.cpp` — `/api/addons` get/set | ✅ done |
+| `CMakeLists.txt` — source + `hardware_uart` | ✅ done |
+| Web UI `EspUartBridge.tsx` | ✅ done |
+| `clk_peri` fix (`uart_set_baudrate` after `tud_inited()`) | ✅ done |
+| Pico-side UART frames confirmed at 1 Mbaud (CH340) | ✅ done |
+| ESP32 receiver firmware (`esp-gamepad`) | 🔲 todo |
+| End-to-end BLE HID validation | 🔲 todo |
+
+---
+
 ## Branch Name
 
 ```
@@ -18,7 +39,7 @@ feat/esp32-uart-bridge
 
 ## UART Frame Protocol
 
-A fixed-size 16-byte binary frame sent at 1 MHz baud (can be tuned):
+A fixed-size 18-byte binary frame sent at 1 MHz baud (can be tuned):
 
 | Byte(s) | Field      | Type     | Notes                        |
 |---------|------------|----------|------------------------------|
@@ -222,11 +243,15 @@ Import component and spread its scheme/state into the page's validation schema, 
 
 ## Build & Test Sequence
 
-1. Create branch: `git checkout -b feat/esp32-uart-bridge`
-2. Create all new files and apply all modifications above
-3. Regenerate protobuf: `cmake` will call `compile_proto.cmake` automatically
-4. Build with: `GP2040_BOARDCONFIG=Pico2EspBridge cmake .. && make`
-5. Flash to Pico2, connect TX/RX to ESP32 UART RX/TX
-6. Flash esp-gamepad firmware to ESP32
-7. Validate UART frames with a logic analyzer or second Pico reading the bus
-8. Validate BLE HID pairing and input response on PC
+1. ✅ Branch created: `feat/esp32-uart-bridge`
+2. ✅ All Pico-side files created and modified
+3. ✅ Protobuf regenerated automatically by cmake
+4. ✅ Build: `cmake --build build --parallel` (exit 0)
+5. ✅ Flash to Pico2 (BOOTSEL drag-drop), factory-reset with S1+S2+Up
+6. ✅ UART frames confirmed at 1 Mbaud via CH340 on GPIO 20 — buttons, dpad, axes all correct
+7. 🔲 Write ESP32 receiver in `esp-gamepad` (read UART, parse frames, send BLE HID reports)
+8. 🔲 Wire Pico GPIO 20 → ESP32 UART RX; validate BLE HID pairing and input on PC
+
+### Key implementation note — `clk_peri` fix (permanent, do not remove)
+
+On RP2350, `tud_init()` (called on Core 0 after Core 1 is already running) reconfigures `clk_peri`, which invalidates the UART baud-rate divisor set during `setup()`. The fix is in `process()`: poll `tud_inited()` and call `uart_set_baudrate()` once it returns true. The `uartReady` flag gates all frame transmission until this correction is applied.

@@ -7,29 +7,37 @@
 #include "hardware/gpio.h"
 #include "tusb.h"
 
+// Frame layout (18 bytes):
+//  [0]      0xA5 start
+//  [1..4]   buttons (uint32_t LE)
+//  [5]      dpad
+//  [6..7]   lx (uint16_t LE)
+//  [8..9]   ly (uint16_t LE)
+//  [10..11] rx (uint16_t LE)
+//  [12..13] ry (uint16_t LE)
+//  [14]     lt
+//  [15]     rt
+//  [16]     XOR checksum of [1..15]
+//  [17]     0x5A end
 #define FRAME_START   0xA5
 #define FRAME_END     0x5A
 #define FRAME_SIZE    18
 
 bool EspUartBridgeAddon::available() {
-    // DEBUG: force enable — remove after diagnosis
-    return true;
+    const EspUartBridgeOptions& options = Storage::getInstance().getAddonOptions().espUartBridgeOptions;
+    return options.enabled && isValidPin(options.txPin) && isValidPin(options.rxPin);
 }
 
 void EspUartBridgeAddon::setup() {
-    // DEBUG: hardcoded to UART0 / GPIO 0+1 — remove after diagnosis
-    txPin    = 0;
-    rxPin    = 1;
-    baudRate = 115200;
-    uartInst = uart0;
+    const EspUartBridgeOptions& options = Storage::getInstance().getAddonOptions().espUartBridgeOptions;
+    txPin    = options.txPin;
+    rxPin    = options.rxPin;
+    baudRate = options.baudRate;
+    uartInst = (options.uartBlock == 0) ? uart0 : uart1;
 
     uart_init(uartInst, baudRate);
     gpio_set_function(txPin, GPIO_FUNC_UART);
     gpio_set_function(rxPin, GPIO_FUNC_UART);
-
-    const char* banner = "UART OK\r\n";
-    uart_write_blocking(uartInst, (const uint8_t*)banner, 9);
-    uart_tx_wait_blocking(uartInst);
 }
 
 void EspUartBridgeAddon::process() {
@@ -41,15 +49,34 @@ void EspUartBridgeAddon::process() {
         gpio_set_function(txPin, GPIO_FUNC_UART);
         gpio_set_function(rxPin, GPIO_FUNC_UART);
         uartReady = true;
-        const char* banner2 = "READY\r\n";
-        uart_write_blocking(uartInst, (const uint8_t*)banner2, 7);
-        uart_tx_wait_blocking(uartInst);
         return;
     }
 
+    Gamepad* gamepad = Storage::getInstance().GetProcessedGamepad();
+    const GamepadState& gs = gamepad->state;
+
     uint8_t frame[FRAME_SIZE];
     frame[0]  = FRAME_START;
-    for (int i = 1; i <= 15; i++) frame[i] = (uint8_t)i;
+    // buttons (32-bit LE)
+    frame[1]  = gs.buttons & 0xFF;
+    frame[2]  = (gs.buttons >> 8) & 0xFF;
+    frame[3]  = (gs.buttons >> 16) & 0xFF;
+    frame[4]  = (gs.buttons >> 24) & 0xFF;
+    // dpad
+    frame[5]  = gs.dpad;
+    // lx, ly, rx, ry (16-bit LE each)
+    frame[6]  = gs.lx & 0xFF;
+    frame[7]  = (gs.lx >> 8) & 0xFF;
+    frame[8]  = gs.ly & 0xFF;
+    frame[9]  = (gs.ly >> 8) & 0xFF;
+    frame[10] = gs.rx & 0xFF;
+    frame[11] = (gs.rx >> 8) & 0xFF;
+    frame[12] = gs.ry & 0xFF;
+    frame[13] = (gs.ry >> 8) & 0xFF;
+    // triggers
+    frame[14] = gs.lt;
+    frame[15] = gs.rt;
+    // XOR checksum of payload bytes
     uint8_t checksum = 0;
     for (int i = 1; i <= 15; i++) checksum ^= frame[i];
     frame[16] = checksum;

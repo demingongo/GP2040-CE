@@ -15,13 +15,14 @@
 ### `headers/addons/esp_uart_bridge.h`
 - [x] Create file with `#ifndef` guards for all defaults (ENABLED, UART_BLOCK, TX_PIN, RX_PIN, BAUD)
 - [x] Declare `EspUartBridgeAddon` class inheriting `GPAddon`
-- [x] Declare private members (`uart_inst_t*`, `baudRate`, `txPin`, `rxPin`)
+- [x] Declare private members (`uart_inst_t*`, `baudRate`, `txPin`, `rxPin`, `uartReady`)
 
 ### `src/addons/esp_uart_bridge.cpp`
 - [x] Implement `available()` — check enabled + valid pins via `isValidPin()`
 - [x] Implement `setup()` — read options from storage, call `uart_init()`, `gpio_set_function()`, set baud rate
 - [x] Implement `process()` — read `GetProcessedGamepad()->state`, pack 18-byte frame, XOR checksum, `uart_write_blocking()`
 - [x] Implement empty stubs: `preprocess()`, `postprocess()`, `reinit()`
+- [x] **`clk_peri` fix** — `tud_init()` on Core 0 reconfigures `clk_peri` after Core 1's `setup()` runs, invalidating the UART baud divisor. Fix: poll `tud_inited()` in `process()` and call `uart_set_baudrate()` once it returns true. `uartReady` flag gates all frame TX until correction is applied. **Permanent — do not remove.**
 
 ### `configs/Pico2EspBridge/BoardConfig.h`
 - [x] Copy from `configs/Pico2/BoardConfig.h`
@@ -73,7 +74,7 @@
 ## Build
 
 - [x] Run `cmake` — verify protobuf regenerates cleanly (`config.pb.h` / `config.pb.c`)
-- [x] Build with `GP2040_BOARDCONFIG=Pico2EspBridge` — no errors
+- [x] Build with `GP2040_BOARDCONFIG=Pico2EspBridge` — no errors (`cmake --build build --parallel`, exit 0)
 - [ ] Build with default `Pico` config — no regressions (addon disabled by default)
 
 ## Web Configurator
@@ -85,14 +86,23 @@
 
 ---
 
-## Hardware Validation
+## Hardware Validation — Pico side (UART frames)
 
-- [ ] Flash `Pico2EspBridge` firmware to Pico2
-- [ ] Wire Pico2 GPIO 20 (UART1 TX, physical pin 26) → ESP32 RX, GPIO 21 (UART1 RX, physical pin 27) → ESP32 TX, GND → GND
+- [x] Flash `Pico2EspBridge` firmware to Pico2; factory-reset with S1+S2+Up to seed BoardConfig.h defaults into storage
+- [x] Wire CH340 RX → GPIO 20 (physical pin 26, right side 6th from bottom), GND → GND
+- [x] Open RealTerm at 1,000,000 baud on CH340 COM port — continuous 18-byte frames confirmed
+- [x] Confirm frame structure: `A5` start, buttons (4B LE), dpad (1B), lx/ly/rx/ry (2B LE each), lt/rt (1B each), XOR checksum, `5A` end
+- [x] Confirm XOR checksum correct on idle frames
+- [x] Confirm buttons change frame bytes in real time (S1 → byte [2] = `01`, S2 → byte [2] = `02`, UP dpad → byte [5] = `01`)
+- [x] Confirm joystick center values: `FF 7F` (0x7FFF) on all four axes
+- [ ] Confirm no frame corruption under sustained button input (stress test)
+
+## Hardware Validation — ESP32 integration
+
+- [ ] Wire Pico2 GPIO 20 → ESP32 UART RX, GPIO 21 → ESP32 UART TX, GND → GND
 - [ ] Flash esp-gamepad firmware to ESP32
-- [ ] Confirm UART frames are transmitted (logic analyzer or Serial monitor on ESP32)
-- [ ] Confirm XOR checksum passes on every frame
-- [ ] Confirm no frame corruption under sustained button input
+- [ ] Confirm ESP32 receives and parses frames (Serial monitor at 115200 showing decoded state)
+- [ ] Confirm XOR checksum validation passes on ESP32 side
 
 ## BLE Validation
 

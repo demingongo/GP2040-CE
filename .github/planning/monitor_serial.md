@@ -2,6 +2,8 @@
 
 The Pico2EspBridge firmware transmits 18-byte frames on **GPIO 20 (UART1 TX)** at **1,000,000 baud** (1 Mbaud), 8N1.
 
+> **Monitoring recommendation:** Use a USB-UART dongle (CH340, CP2102, FT232) wired directly to GPIO 20. Do **not** use HC-06 for monitoring — see [Why not HC-06?](#why-not-hc-06-for-monitoring) below.
+
 ---
 
 ## Option A — ESP32 (target hardware)
@@ -29,105 +31,108 @@ The Pico2EspBridge firmware transmits 18-byte frames on **GPIO 20 (UART1 TX)** a
 
 ---
 
-## Option B — HC-06 Bluetooth module (monitoring only, not for production)
+## Option B — CH340 / USB-UART dongle (recommended for development)
 
-> **Limitation:** HC-06 hardware tops out at **115200 baud** by default. You must temporarily lower the firmware baud rate for this test and revert it before final use.
+Any common USB-UART adapter works: CH340, CP2102, FT232RL. The CH340 in particular supports up to 2 Mbaud, well above the 1 Mbaud frame rate.
 
-### Step 1 — Temporarily reduce baud rate
+### Step 1 — Wire
 
-In [configs/Pico2EspBridge/BoardConfig.h](../../configs/Pico2EspBridge/BoardConfig.h), change:
-
-```c
-#define ESP_UART_BRIDGE_BAUD  115200   // temporary — revert to 1000000 before production
-```
-
-Rebuild and reflash the Pico2.
-
-### Step 2 — Wire HC-06
-
-| Pico2 | HC-06 |
+| Pico2 | CH340 dongle |
 |---|---|
-| GPIO 20 (TX, physical pin 26) | RXD |
-| 3.3 V or 5 V (check module) | VCC |
-| GND | GND |
+| GPIO 20 (TX, physical pin 26) | RX |
+| GND (any) | GND |
 
-> HC-06 TX does not need to be connected for one-way monitoring.
+> TX (dongle → Pico) does not need to be connected for one-way monitoring.
 
-### Step 3 — Pair HC-06 with Windows
+**How to find physical pin 26:** on the right side of the Pico2, count up from the bottom — the order is GPIO 16, 17, GND, 18, 19, **20** (6th position). Connect to the 6th pin on that side.
 
-1. Power the HC-06 — LED blinks rapidly (unpaired).
-2. Open **Settings → Bluetooth** and pair `HC-06` (default PIN: `1234`).
-3. Note the assigned COM port (e.g. `COM7`) under **Device Manager → Ports**.
+### Step 2 — Open serial monitor
 
-### Step 4 — Open serial monitor
+1. Plug the CH340 into a PC USB port — it appears as a COM port in Device Manager immediately, no pairing needed.
+2. Open **RealTerm**: Port = the CH340 COM port, Baud = **1000000** (type it manually — it won't be in the dropdown), Display = *Hex[space]*.
+3. Unplug and replug the Pico2 (no BOOTSEL needed if already flashed).
 
-Use any hex-capable terminal at **115200 8N1**:
+> **Important:** At 1 Mbaud the frame rate is extremely high. Do **not** try to read the data from the RealTerm display window — it will freeze or crash the app. Use file capture instead:
+>
+> 1. Go to the **Capture** tab
+> 2. Set a file path (e.g. `c:\tmp\capture.txt`)
+> 3. Check **Capture as Hex**
+> 4. Click **Start: Overwrite**
+> 5. Press the buttons you want to test on the controller
+> 6. Click **Stop Capture** after 1–2 seconds
+> 7. Open the file in a text editor — you will see the hex stream with your button presses embedded
 
-- **Arduino IDE 2.x** (easiest if already installed): Tools → Port → select the HC-06 COM port → Tools → Serial Monitor. Set baud to `115200` and use the **HEX** toggle in the monitor toolbar. The link stays alive as long as the monitor is open.
-- **PuTTY**: Connection type = *Serial*, Speed = `115200`, then go to *Terminal* and enable *Implicit CR in every LF*.  
-  Use a hex viewer plugin or RealTerm instead if you need raw hex display.
-- **RealTerm**: Port = `COM7`, Baud = `115200`, Display = *Hex[space]*.
+You should see continuous 18-byte frames streaming at high speed:
 
-> **Tip:** Open the serial monitor *before* powering the Pico — this ensures the COM port is held open and the Bluetooth link stays connected.
-
-You should see `A5`-prefixed 18-byte frames streaming continuously.
-
-### Step 5 — Revert baud rate
-
-```c
-#define ESP_UART_BRIDGE_BAUD  1000000
+```
+A5 xx xx xx xx xx FF 7F FF 7F FF 7F FF 7F 00 00 xx 5A  ← idle (no buttons)
 ```
 
-Rebuild and reflash before connecting to the real ESP32.
+Press a button and watch the bytes change in real time.
+
+### Step 3 — Interpret a frame
+
+```
+Offset  Bytes  Field
+  0      1     0xA5 — frame start
+  1–4    4     buttons (uint32 LE) — bit 0=UP, bit 8=S1, bit 9=S2, etc.
+  5      1     dpad — bit 0=UP, bit 1=DOWN, bit 2=LEFT, bit 3=RIGHT
+  6–7    2     lx (uint16 LE) — 0x7FFF = center
+  8–9    2     ly (uint16 LE) — 0x7FFF = center
+  10–11  2     rx (uint16 LE) — 0x7FFF = center
+  12–13  2     ry (uint16 LE) — 0x7FFF = center
+  14     1     lt — left trigger (0–0xFF)
+  15     1     rt — right trigger (0–0xFF)
+  16     1     XOR checksum of bytes 1–15
+  17     1     0x5A — frame end
+```
+
+**Idle (no buttons, joysticks centered):**
+```
+A5 00 00 00 00 00 FF 7F FF 7F FF 7F FF 7F 00 00 00 5A
+```
+
+**UP pressed** — dpad byte (offset 5), bit 0:
+```
+A5 00 00 00 00 01 FF 7F FF 7F FF 7F FF 7F 00 00 01 5A
+                ^^                                 ^^ checksum
+```
+
+**S1 pressed** — buttons bit 8 = 0x0100, appears in offset 2:
+```
+A5 00 01 00 00 00 FF 7F FF 7F FF 7F FF 7F 00 00 01 5A
+      ^^                                           ^^ checksum
+```
+
+**S2 pressed** — buttons bit 9 = 0x0200, appears in offset 2:
+```
+A5 00 02 00 00 00 FF 7F FF 7F FF 7F FF 7F 00 00 02 5A
+      ^^                                           ^^ checksum
+```
+
+> **Tip:** RealTerm file capture is continuous — if you capture while no buttons are held you will only see idle frames. Hold a button for a second while capturing and you will see the relevant byte change mid-stream.
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| No COM port appears | CH340 driver not installed | Install CH340 driver from manufacturer site |
+| Garbage / no frames | Wrong baud rate | Confirm 1000000 exactly — RealTerm accepts manual entry |
+| Frames visible but no button response | Factory reset not done | Hold S1+S2+Up at boot to re-seed storage from BoardConfig.h defaults |
+| Steady 3.3 V on GPIO 20 | Firmware not transmitting | Verify UF2 was flashed after latest build |
 
 ---
 
-## Troubleshooting — HC-06 LED goes dark / cannot connect
+## Why not HC-06 for monitoring?
 
-### LED turns off after a few seconds
+The HC-06 is useful as a wireless transport for the production link to a PC but is a poor monitoring tool for this UART stream. Here is why:
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| LED blinks, then goes completely off | Power brown-out | Use **VBUS (5 V, physical pin 40)** instead of 3.3 V for HC-06 VCC. Many HC-06 modules have an onboard 3.3 V regulator and require 5 V input. |
-| LED blinks briefly, then off | Baud rate mismatch locking up HC-06 | Confirm Step 1 was done — the firmware **must** be rebuilt at 115200 before connecting HC-06 to the TX line. |
-| LED never blinks at all | No power reaching module | Check wiring; the Pico 3.3 V rail can only source ~300 mA — if other peripherals are attached, use VBUS. |
+| Problem | Detail |
+|---|---|
+| **Baud rate ceiling** | HC-06 SPP profile maxes out at 115200 baud via AT commands. The production firmware runs at **1,000,000 baud** — 8.7× faster. To use HC-06 you must rebuild the firmware at 115200, monitor, then rebuild again at 1 Mbaud. This is error-prone and tests a different configuration than production. |
+| **SPP buffering and latency** | Bluetooth Serial Port Profile (SPP) does not forward bytes one-by-one. The HC-06 buffers incoming UART data and sends it in Bluetooth packets when a threshold is reached or a timer fires. You see bursts, not a real-time stream — making it hard to correlate button presses with frame changes. |
+| **Connection must be established before data arrives** | HC-06 only forwards data when a host application holds the COM port open and the Bluetooth link is active. The Pico starts streaming immediately on boot, so any frames sent in the first ~2 seconds (before Windows establishes the SPP link) are silently dropped. |
+| **Two extra failure modes** | HC-06 adds Bluetooth pairing state and Windows COM port assignment as additional points of failure, neither of which exists in the final Pico-to-ESP32 wired path. Debugging "no data" becomes ambiguous: is it the firmware, the Bluetooth link, or the COM port? |
+| **Not the production topology** | The real link is wired UART between Pico GPIO 20 and ESP32. Monitoring via HC-06 inserts a component that is not in the final design and masks any wiring or baud-rate issues that would appear with the ESP32. |
 
-### "Paired" but not connected — shows only as paired after brief connection
-
-This is normal Windows SPP (Serial Port Profile) behavior.  
-"Paired" = credentials stored. "Connected" = an application is actively holding the COM port open.  
-The HC-06 drops to standby within a few seconds once the port is closed or was never opened.
-
-**The fix: keep RealTerm (or PuTTY) open with the COM port selected *before* you expect data.**  
-Do not close the terminal between tests — re-opening it re-initiates the Bluetooth connection.
-
-If the connection drops *while* the port is open:
-- The Pico may still be transmitting at 1 Mbaud (check Step 1 was done and firmware rebuilt).
-- Windows may have auto-suspended the Bluetooth adapter — disable **power management** for the Bluetooth adapter: Device Manager → Bluetooth adapter → Properties → Power Management → uncheck *Allow the computer to turn off this device to save power*.
-- Try a shorter USB cable to the Pico to rule out USB power sag affecting the 3.3 V / VBUS rails.
-
-### Paired but cannot open COM port
-
-After pairing, the HC-06 LED will **blink slowly** (not solid) until a host application opens the COM port.
-
-1. Open **Device Manager → Ports (COM & LPT)** and find the `HC-06` or `Standard Serial over Bluetooth link` entry — note the port number (e.g. `COM7`).  
-   > If no port appears, right-click the HC-06 in Bluetooth settings → **More Bluetooth options → COM Ports tab** and add an outgoing port manually.
-2. Open RealTerm (or PuTTY) at **115200 8N1** on that COM port.  
-   The HC-06 LED should go **solid** when the port is successfully opened.
-3. If connection immediately drops, the HC-06 may be paired to a stale entry — remove it from Bluetooth settings, power-cycle the module, and re-pair.
-
-### Connected but no output in serial monitor
-
-Check in this order:
-
-1. **Firmware baud rate** — confirm Step 1 was done, the firmware was **rebuilt** (`ninja -C build`) and **reflashed** after changing `ESP_UART_BRIDGE_BAUD` to `115200`. If the Pico is still transmitting at 1 Mbaud, the HC-06 forwards nothing (framing errors).
-
-2. **Wiring** — GPIO 20 (physical pin 26) must be connected to HC-06 **RXD**. A loose or missing wire here gives a connected-but-silent result.
-
-3. **USB gamepad not attached** — the bridge only emits frames when a USB HID gamepad is connected upstream to the Pico. Plug in a controller and press buttons; you should see data appear.
-
-4. **Wrong COM port** — Windows creates two SPP ports for HC-06. You need the **Outgoing** one:  
-   Bluetooth settings → *More Bluetooth options* → **COM Ports** tab.  
-   Use the port listed as *Direction: Outgoing* (e.g. `COM5 Outgoing`). The Incoming port will connect but receive nothing.
-
-5. **Multimeter check** — with a meter on GPIO 20 vs GND, you should see voltage toggling rapidly (~1–2 V average) while the Pico sends. A steady 3.3 V means no transmission.
+**Summary:** use HC-06 only when you specifically need to validate the Bluetooth path to a Windows host. For all UART frame debugging, use a CH340 dongle wired directly to GPIO 20.
