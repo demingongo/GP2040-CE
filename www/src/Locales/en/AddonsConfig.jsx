@@ -213,6 +213,7 @@ export default {
 	'esp-uart-bridge-tx-pin-label': 'TX GPIO Pin',
 	'esp-uart-bridge-rx-pin-label': 'RX GPIO Pin',
 	'esp-uart-bridge-baud-rate-label': 'Baud Rate',
+	'esp-uart-bridge-disable-when-usb-label': 'Disable UART when USB is connected (wired mode)',
 	'tg16-extension-header-text': 'PC Engine/TurboGrafx-16 Extension Configuration',
 	'tg16-extension-sub-header-text': 'Note: If the display is enabled at the same time, this add-on will be disabled.',
 	'tg16-extension-oe-pin-label': 'OE GPIO Pin',

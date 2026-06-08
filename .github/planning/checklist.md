@@ -11,11 +11,13 @@
 ### `proto/config.proto`
 - [x] Add `EspUartBridgeOptions` message (enabled, uartBlock, txPin, rxPin, baudRate)
 - [x] Add `espUartBridgeOptions` field (field 31) to `AddonOptions` message
+- [x] Add `disableWhenUsbConnected` field (field 6, default true) to `EspUartBridgeOptions`
 
 ### `headers/addons/esp_uart_bridge.h`
 - [x] Create file with `#ifndef` guards for all defaults (ENABLED, UART_BLOCK, TX_PIN, RX_PIN, BAUD)
 - [x] Declare `EspUartBridgeAddon` class inheriting `GPAddon`
 - [x] Declare private members (`uart_inst_t*`, `baudRate`, `txPin`, `rxPin`, `uartReady`)
+- [x] Add `ESP_UART_BRIDGE_DISABLE_WHEN_USB` default macro (=1); add `disableWhenUsbConnected` private member
 
 ### `src/addons/esp_uart_bridge.cpp`
 - [x] Implement `available()` — check enabled + valid pins via `isValidPin()`
@@ -23,6 +25,7 @@
 - [x] Implement `process()` — read `GetProcessedGamepad()->state`, pack 18-byte frame, XOR checksum, `uart_write_blocking()`
 - [x] Implement empty stubs: `preprocess()`, `postprocess()`, `reinit()`
 - [x] **`clk_peri` fix** — `tud_init()` on Core 0 reconfigures `clk_peri` after Core 1's `setup()` runs, invalidating the UART baud divisor. Fix: poll `tud_inited()` in `process()` and call `uart_set_baudrate()` once it returns true. `uartReady` flag gates all frame TX until correction is applied. **Permanent — do not remove.**
+- [x] **VBUS suppression** — define `PICO_VBUS_PIN` fallback (24); init GPIO 24 as input in `setup()` when `disableWhenUsbConnected`; skip frame in `process()` when `gpio_get(PICO_VBUS_PIN)` is high
 
 ### `configs/Pico2EspBridge/BoardConfig.h`
 - [x] Copy from `configs/Pico2/BoardConfig.h`
@@ -56,15 +59,27 @@
 ### `www/src/Addons/EspUartBridge.tsx` *(new file)*
 - [x] Create React addon component with enable toggle and fields for UART block, TX pin, RX pin, baud rate
 - [x] Export `espUartBridgeScheme`, `espUartBridgeState`, and default component
+- [x] Add `espUartBridgeDisableWhenUsbConnected` to state (default 1) and toggle switch inside the options panel
 
 ### `www/src/Locales/en/AddonsConfig.jsx`
 - [x] Add translation strings for ESP32 UART Bridge section header and all field labels
+- [x] Add `esp-uart-bridge-disable-when-usb-label` translation string
 
 ### `www/src/Pages/AddonsConfigPage.tsx`
 - [x] Import `EspUartBridge`, `espUartBridgeScheme`, `espUartBridgeState`
 - [x] Spread `espUartBridgeScheme` into validation schema
 - [x] Spread `espUartBridgeState` into `DEFAULT_VALUES`
 - [x] Add `EspUartBridge` to `ADDONS` render list
+
+### `src/config_utils.cpp`
+- [x] Add `#include "addons/esp_uart_bridge.h"`
+- [x] Add `INIT_UNSET_PROPERTY` block for `espUartBridgeOptions` (enabled, uartBlock, txPin, rxPin, baudRate) so BoardConfig.h defaults are seeded into storage on first boot
+- [x] Add `INIT_UNSET_PROPERTY` for `disableWhenUsbConnected` (seeded from `ESP_UART_BRIDGE_DISABLE_WHEN_USB`)
+
+### `src/webconfig.cpp`
+- [x] Add `EspUartBridgeOptions` read handler in `/api/addons/get`
+- [x] Add `EspUartBridgeOptions` write handler in `/api/addons/set`
+- [x] Add `docToValue` / `writeDoc` for `espUartBridgeDisableWhenUsbConnected`
 
 ### `www/src/Store/useSystemStats.ts`
 - [x] Fix: decouple GitHub releases API fetch from local stats — failure no longer blocks home page from rendering
@@ -82,6 +97,7 @@
 - [x] Home page system stats render even when GitHub API is unreachable
 - [x] Add-Ons page shows "ESP32 UART Bridge Configuration" section
 - [x] Toggle enables/disables addon; UART block, TX pin, RX pin, baud rate are editable
+- [ ] "Disable UART when USB connected" toggle visible and saves correctly
 - [ ] Save settings via web UI and confirm persistence across reboot
 
 ---

@@ -1922,6 +1922,7 @@ std::string setAddonOptions()
     docToPin(espUartBridgeOptions.txPin, doc, "espUartBridgeTxPin");
     docToPin(espUartBridgeOptions.rxPin, doc, "espUartBridgeRxPin");
     docToValue(espUartBridgeOptions.baudRate, doc, "espUartBridgeBaudRate");
+    docToValue(espUartBridgeOptions.disableWhenUsbConnected, doc, "espUartBridgeDisableWhenUsbConnected");
 
     TG16Options& tg16Options = Storage::getInstance().getAddonOptions().tg16Options;
     docToValue(tg16Options.enabled, doc, "TG16padAddonEnabled");
@@ -2387,6 +2388,7 @@ std::string getAddonOptions()
     writeDoc(doc, "espUartBridgeTxPin", cleanPin(espUartBridgeOptions.txPin));
     writeDoc(doc, "espUartBridgeRxPin", cleanPin(espUartBridgeOptions.rxPin));
     writeDoc(doc, "espUartBridgeBaudRate", espUartBridgeOptions.baudRate);
+    writeDoc(doc, "espUartBridgeDisableWhenUsbConnected", espUartBridgeOptions.disableWhenUsbConnected);
 
     TG16Options& tg16Options = Storage::getInstance().getAddonOptions().tg16Options;
     writeDoc(doc, "TG16padAddonEnabled", tg16Options.enabled);

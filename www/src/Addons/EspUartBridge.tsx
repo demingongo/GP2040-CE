@@ -13,6 +13,7 @@ export const espUartBridgeState = {
 	espUartBridgeTxPin: 20,
 	espUartBridgeRxPin: 21,
 	espUartBridgeBaudRate: 1000000,
+	espUartBridgeDisableWhenUsbConnected: 1,
 };
 
 const EspUartBridge = ({ values, errors, handleChange, handleCheckbox }: AddonPropTypes) => {
@@ -74,6 +75,18 @@ const EspUartBridge = ({ values, errors, handleChange, handleCheckbox }: AddonPr
 						max={2000000}
 					/>
 				</Row>
+				<FormCheck
+					label={t('AddonsConfig:esp-uart-bridge-disable-when-usb-label')}
+					type="switch"
+					id="EspUartBridgeDisableWhenUsbConnected"
+					reverse={true}
+					isInvalid={false}
+					checked={Boolean(values.espUartBridgeDisableWhenUsbConnected)}
+					onChange={(e) => {
+						handleCheckbox('espUartBridgeDisableWhenUsbConnected');
+						handleChange(e);
+					}}
+				/>
 			</div>
 			<FormCheck
 				label={t('Common:switch-enabled')}

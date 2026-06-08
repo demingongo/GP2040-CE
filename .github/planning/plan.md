@@ -23,6 +23,7 @@ The Pico2 continues to function as a normal USB gamepad simultaneously.
 | `CMakeLists.txt` — source + `hardware_uart` | ✅ done |
 | Web UI `EspUartBridge.tsx` | ✅ done |
 | `clk_peri` fix (`uart_set_baudrate` after `tud_inited()`) | ✅ done |
+| `disableWhenUsbConnected` option (GPIO 24 VBUS sense) | ✅ done |
 | Pico-side UART frames confirmed at 1 Mbaud (CH340) | ✅ done |
 | ESP32 receiver firmware (`esp-gamepad`) | 🔲 todo |
 | End-to-end BLE HID validation | 🔲 todo |
@@ -203,9 +204,47 @@ INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, uartBlock, ESP_UAR
 INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, txPin, (Pin_t)ESP_UART_BRIDGE_TX_PIN);
 INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, rxPin, (Pin_t)ESP_UART_BRIDGE_RX_PIN);
 INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, baudRate, ESP_UART_BRIDGE_BAUD);
+INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, disableWhenUsbConnected, !!ESP_UART_BRIDGE_DISABLE_WHEN_USB);
 ```
 
 Also add `#include "addons/esp_uart_bridge.h"` alongside the other addon includes at the top of the file.
+
+---
+
+### 11. `disableWhenUsbConnected` — UART suppression when USB power is present
+
+**Problem:** With the original implementation the UART bridge transmitted continuously once `tud_inited()` returned true, even while the Pico2 was powered and enumerated over USB. In wired (USB) mode the BLE path is unnecessary and the constant UART traffic wastes power and may confuse an attached ESP32.
+
+**Solution:** Add a boolean option `disableWhenUsbConnected` (proto field 6, default `true`). When enabled the addon reads **GPIO 24** each `process()` call.
+
+GPIO 24 is an **internal GPIO** on Pico / Pico2 — it is **not brought out to any header pin** and cannot conflict with user wiring or board config GPIO assignments. On the PCB it is hardwired through a resistor voltage-divider (5 V → ~3 V) from the USB VBUS rail, making it safe to read from the RP2350 at 3.3 V logic. This is the mechanism documented in `pico2.h` as `PICO_VBUS_PIN 24`.
+
+If VBUS is high (USB power present), the frame is skipped silently.
+
+GPIO 24 is initialised once in `setup()` (as a plain input, no software pull needed — the hardware divider holds the level) only when the option is enabled. The check is placed before the gamepad state read to avoid any unnecessary work.
+
+**This option can be disabled via the web configurator** (Add-Ons page → ESP32 UART Bridge → "Disable UART when USB is connected" toggle off). When off, `disableWhenUsbConnected` is stored as `false` in persistent storage, and the VBUS check in `process()` is entirely bypassed — UART frames are sent regardless of USB state. The full save/load path is:
+
+> web UI toggle → `setFieldValue(name, 0/1)` → `setAddonsOptions` POST → `docToValue(espUartBridgeOptions.disableWhenUsbConnected, ...)` → flash storage → loaded in `setup()` → `disableWhenUsbConnected` member → `if (disableWhenUsbConnected && gpio_get(PICO_VBUS_PIN))` guard in `process()`
+
+**Behaviour summary:**
+
+| Option state | Power source | GPIO 24 | UART frames sent? |
+|---|---|---|---|
+| Enabled (default) | USB | HIGH | No (suppressed) |
+| Enabled (default) | VSYS / battery | LOW | Yes |
+| Disabled (via web UI) | USB or VSYS | any | Yes (always) |
+
+**Default:** `ESP_UART_BRIDGE_DISABLE_WHEN_USB 1` in `esp_uart_bridge.h` — enabled by default on all board configs. Override in BoardConfig.h to change the default for a specific board.
+
+**Files changed:**
+- `proto/config.proto` — added field `disableWhenUsbConnected = 6`
+- `headers/addons/esp_uart_bridge.h` — added `ESP_UART_BRIDGE_DISABLE_WHEN_USB` default macro; added `disableWhenUsbConnected` private member
+- `src/addons/esp_uart_bridge.cpp` — reads option in `setup()`, inits GPIO 24 if needed, checks VBUS in `process()`
+- `src/config_utils.cpp` — `INIT_UNSET_PROPERTY` for new field
+- `src/webconfig.cpp` — `docToValue` / `writeDoc` for `espUartBridgeDisableWhenUsbConnected`
+- `www/src/Addons/EspUartBridge.tsx` — toggle switch added inside the options panel
+- `www/src/Locales/en/AddonsConfig.jsx` — `esp-uart-bridge-disable-when-usb-label`
 
 ---
 

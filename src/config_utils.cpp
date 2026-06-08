@@ -1166,6 +1166,7 @@ void ConfigUtils::initUnsetPropertiesWithDefaults(Config& config)
     INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, txPin, (Pin_t)ESP_UART_BRIDGE_TX_PIN);
     INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, rxPin, (Pin_t)ESP_UART_BRIDGE_RX_PIN);
     INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, baudRate, ESP_UART_BRIDGE_BAUD);
+    INIT_UNSET_PROPERTY(config.addonOptions.espUartBridgeOptions, disableWhenUsbConnected, !!ESP_UART_BRIDGE_DISABLE_WHEN_USB);
 }
 
 

@@ -23,6 +23,10 @@
 #define ESP_UART_BRIDGE_BAUD 1000000
 #endif
 
+#ifndef ESP_UART_BRIDGE_DISABLE_WHEN_USB
+#define ESP_UART_BRIDGE_DISABLE_WHEN_USB 1
+#endif
+
 #define EspUartBridgeName "EspUartBridge"
 
 class EspUartBridgeAddon : public GPAddon
@@ -41,6 +45,7 @@ private:
     int txPin;
     int rxPin;
     bool uartReady = false;
+    bool disableWhenUsbConnected = true;
 };
 
 #endif

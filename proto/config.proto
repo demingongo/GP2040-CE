@@ -915,6 +915,7 @@ message EspUartBridgeOptions
     optional int32 txPin = 3 [default = -1];
     optional int32 rxPin = 4 [default = -1];
     optional uint32 baudRate = 5 [default = 1000000];
+    optional bool disableWhenUsbConnected = 6 [default = true];
 }
 
 message AddonOptions

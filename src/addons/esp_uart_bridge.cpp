@@ -7,6 +7,12 @@
 #include "hardware/gpio.h"
 #include "tusb.h"
 
+// VBUS sense pin: reads high when USB 5 V is present on the connector.
+// GPIO 24 on all Pico / Pico2 board variants; override in BoardConfig.h if needed.
+#ifndef PICO_VBUS_PIN
+#define PICO_VBUS_PIN 24
+#endif
+
 // Frame layout (18 bytes):
 //  [0]      0xA5 start
 //  [1..4]   buttons (uint32_t LE)
@@ -30,10 +36,19 @@ bool EspUartBridgeAddon::available() {
 
 void EspUartBridgeAddon::setup() {
     const EspUartBridgeOptions& options = Storage::getInstance().getAddonOptions().espUartBridgeOptions;
-    txPin    = options.txPin;
-    rxPin    = options.rxPin;
-    baudRate = options.baudRate;
+    txPin                   = options.txPin;
+    rxPin                   = options.rxPin;
+    baudRate                = options.baudRate;
+    disableWhenUsbConnected = options.disableWhenUsbConnected;
     uartInst = (options.uartBlock == 0) ? uart0 : uart1;
+
+    // Initialise VBUS sense pin as a plain input so we can poll it in process().
+    // The Pico/Pico2 board has a hardware voltage divider on this pin; no pull
+    // resistor is needed from software.
+    if (disableWhenUsbConnected) {
+        gpio_init(PICO_VBUS_PIN);
+        gpio_set_dir(PICO_VBUS_PIN, GPIO_IN);
+    }
 
     uart_init(uartInst, baudRate);
     gpio_set_function(txPin, GPIO_FUNC_UART);
@@ -49,6 +64,11 @@ void EspUartBridgeAddon::process() {
         gpio_set_function(txPin, GPIO_FUNC_UART);
         gpio_set_function(rxPin, GPIO_FUNC_UART);
         uartReady = true;
+        return;
+    }
+
+    // Skip transmission while USB VBUS is present (wired mode active).
+    if (disableWhenUsbConnected && gpio_get(PICO_VBUS_PIN)) {
         return;
     }
 
