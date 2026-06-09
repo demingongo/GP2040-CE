@@ -25,7 +25,7 @@
 - [x] Implement `process()` — read `GetProcessedGamepad()->state`, pack 18-byte frame, XOR checksum, `uart_write_blocking()`
 - [x] Implement empty stubs: `preprocess()`, `postprocess()`, `reinit()`
 - [x] **`clk_peri` fix** — `tud_init()` on Core 0 reconfigures `clk_peri` after Core 1's `setup()` runs, invalidating the UART baud divisor. Fix: poll `tud_inited()` in `process()` and call `uart_set_baudrate()` once it returns true. `uartReady` flag gates all frame TX until correction is applied. **Permanent — do not remove.**
-- [x] **VBUS suppression** — define `PICO_VBUS_PIN` fallback (24); init GPIO 24 as input in `setup()` when `disableWhenUsbConnected`; skip frame in `process()` when `gpio_get(PICO_VBUS_PIN)` is high
+- [x] **VBUS suppression** — use `tud_mounted()` (not `gpio_get(PICO_VBUS_PIN)` — unreliable on RP2350 Core 1 context); skip frame in `process()` when `tud_mounted()` is true and `disableWhenUsbConnected` is set
 
 ### `configs/Pico2EspBridge/BoardConfig.h`
 - [x] Copy from `configs/Pico2/BoardConfig.h`
@@ -90,15 +90,21 @@
 
 - [x] Run `cmake` — verify protobuf regenerates cleanly (`config.pb.h` / `config.pb.c`)
 - [x] Build with `GP2040_BOARDCONFIG=Pico2EspBridge` — no errors (`cmake --build build --parallel`, exit 0)
-- [ ] Build with default `Pico` config — no regressions (addon disabled by default)
+- [x] `disableWhenUsbConnected` field present in generated `config.pb.h` (tag 6)
+- [x] Reflash new UF2 to Pico2 (BOOTSEL drag-drop)
+- [x] Factory reset after reflash (S1+S2+Up) to seed `disableWhenUsbConnected=true` into storage
+- [x] Verify UART suppression using `tud_mounted()` — frames stop when USB enumerated, resume on VSYS power
+- [x] Build with default `Pico` config — no regressions (addon disabled by default)
 
 ## Web Configurator
 
 - [x] Home page system stats render even when GitHub API is unreachable
 - [x] Add-Ons page shows "ESP32 UART Bridge Configuration" section
 - [x] Toggle enables/disables addon; UART block, TX pin, RX pin, baud rate are editable
-- [ ] "Disable UART when USB connected" toggle visible and saves correctly
-- [ ] Save settings via web UI and confirm persistence across reboot
+- [x] "Disable UART when USB connected" toggle visible and saves correctly
+- [x] Confirm UART frames stop when USB is connected (via `tud_mounted()` check)
+- [x] Confirm UART frames resume when powered from VSYS only (when `tud_mounted()` is false)
+- [ ] Web UI persistence: save settings and reboot to confirm they survive
 
 ---
 
@@ -111,6 +117,8 @@
 - [x] Confirm XOR checksum correct on idle frames
 - [x] Confirm buttons change frame bytes in real time (S1 → byte [2] = `01`, S2 → byte [2] = `02`, UP dpad → byte [5] = `01`)
 - [x] Confirm joystick center values: `FF 7F` (0x7FFF) on all four axes
+- [x] Confirm UART transmission suppressed when USB is connected (via `tud_mounted()`)
+- [x] Confirm UART transmission resumes when powered from VSYS only
 - [ ] Confirm no frame corruption under sustained button input (stress test)
 
 ## Hardware Validation — ESP32 integration
