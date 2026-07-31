@@ -119,31 +119,31 @@
 - [x] Confirm joystick center values: `FF 7F` (0x7FFF) on all four axes
 - [x] Confirm UART transmission suppressed when USB is connected (via `tud_mounted()`)
 - [x] Confirm UART transmission resumes when powered from VSYS only
-- [ ] Confirm no frame corruption under sustained button input (stress test)
+- [x] Confirm no frame corruption under sustained button input (stress test)
 
 ## Hardware Validation — ESP32 integration
 
-- [ ] Wire Pico2 GPIO 20 → ESP32 UART RX, GPIO 21 → ESP32 UART TX, GND → GND
-- [ ] Flash esp-gamepad firmware to ESP32
-- [ ] Confirm ESP32 receives and parses frames (Serial monitor at 115200 showing decoded state)
-- [ ] Confirm XOR checksum validation passes on ESP32 side
+- [x] Wire Pico2 GPIO 20 → ESP32 UART RX, GPIO 21 → ESP32 UART TX, GND → GND
+- [x] Flash esp-gamepad firmware to ESP32
+- [x] Confirm ESP32 receives and parses frames (Serial monitor at 115200 showing decoded state)
+- [x] Confirm XOR checksum validation passes on ESP32 side
 
 ## BLE Validation
 
-- [ ] ESP32 advertises as `GP2040-CE Wireless`
-- [ ] Pair with Windows 10/11 — recognized as game controller
-- [ ] Test in `joy.cpl` — all 32 buttons respond correctly
-- [ ] Test hat switch (dpad) — all 8 directions correct
-- [ ] Test analog axes (LX, LY, RX, RY) — full range, no drift
-- [ ] Test triggers (LT, RT)
-- [ ] Test macros configured in GP2040-CE Web Config — fire correctly over BLE
+- [x] ESP32 advertises as `GP2040-CE Wireless`
+- [x] Pair with Windows 10/11 — recognized as game controller
+- [x] Test in `joy.cpl` — all 32 buttons respond correctly
+- [x] Test hat switch (dpad) — all 8 directions correct
+- [x] Test analog axes (LX, LY, RX, RY) — full range, no drift
+- [x] Test triggers (LT, RT)
+- [x] Test macros configured in GP2040-CE Web Config — fire correctly over BLE
 - [ ] Test SOCD cleaning — correct behavior reflected wirelessly
 - [ ] Pair with Android — recognized and inputs work
-- [ ] Test in Steam via Steam Input
+- [x] Test in Steam via Steam Input
 - [ ] Test on Linux
 
 ## Regression Validation
 
-- [ ] USB wired output still works simultaneously with BLE active
+- [x] USB wired output still works simultaneously with BLE active
 - [ ] Web configurator still accessible during BLE operation
 - [ ] No increased input latency on USB side when UART addon is running
