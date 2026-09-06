@@ -26,6 +26,17 @@
           sha256 = "sha256-ujqnFjJgvja++GQbcrqSgbxi/DxB6ryQP+sGiFl1bms=";
           fetchSubmodules = true;
         };
+
+        # Fetch and override the Picotool package to use version 2.3.0
+        picotool-2_3 = pkgs.picotool.overrideAttrs (oldAttrs: rec {
+          version = "2.3.0";
+          src = pkgs.fetchFromGitHub {
+            owner = "raspberrypi";
+            repo = "picotool";
+            rev = version;
+            sha256 = "sha256-X97Y8P0+N0j/bY/p2l8r7E9eH2/OqI1vFofgHjZ7W7w="; 
+          };
+        });
       in
       {
         devShells.default = pkgs.mkShell {
@@ -40,7 +51,7 @@
             nodejs_26
 
 						# For Raspberry Pi Pico development
-						picotool
+						picotool-2_3 # Swap picotool for the newly defined 2.3.0 package
 						openocd
 
             # Optional but recommended helpers for embedded work

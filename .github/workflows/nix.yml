@@ -20,7 +20,7 @@ jobs:
         run: |
           nix develop --command bash -c "
             export GP2040_BOARDCONFIG='Pico2EspBridge'
-            cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DPICOTOOL_FORCE_FETCH_FROM_GIT=ON
+            cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
             cmake --build build --parallel
           "
 
