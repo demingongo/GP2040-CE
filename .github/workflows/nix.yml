@@ -40,7 +40,7 @@ jobs:
 
       # Rescue the compiled firmware from the runner VM
       - name: Upload Finished Firmware Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: GP2040-${{ matrix.board }}-Firmware
           path: build/*.uf2 
