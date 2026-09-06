@@ -7,6 +7,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        board: ["Pico2EspBridge", "WaveshareZero"]
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,7 +24,7 @@ jobs:
       - name: Build Firmware
         run: |
           nix develop --command bash -c "
-            export GP2040_BOARDCONFIG='Pico2EspBridge'
+            export GP2040_BOARDCONFIG='${{ matrix.board }}'
             cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
             cmake --build build --parallel
           "
@@ -28,6 +33,6 @@ jobs:
       - name: Upload Finished Firmware Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GP2040-Pico2EspBridge-Firmware
+          name: GP2040-${{ matrix.board }}-Firmware
           path: build/*.uf2 
           if-no-files-found: error
