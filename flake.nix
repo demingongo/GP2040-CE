@@ -23,7 +23,7 @@
           repo = "pico-sdk";
           # The version tag for that this project expects
           rev = "2.3.0";
-          sha256 = "sha256-8ubZW6yQnUTYxQqYI6hi7s3kFVQhe5EaxVvHmo93vgk=";
+          sha256 = "sha256-ujqnFjJgvja++GQbcrqSgbxi/DxB6ryQP+sGiFl1bms=";
           fetchSubmodules = true;
         };
       in
