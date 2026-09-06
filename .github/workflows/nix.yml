@@ -1,0 +1,33 @@
+name: Custom Nix Build (Pico2EspBridge)
+on:
+  push:
+    branches: ["feat/esp32-uart-bridge"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Nix with Flakes enabled
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      # Run the compilation inside the flake's environment
+      - name: Build Firmware
+        run: |
+          nix develop --command bash -c "
+            export GP2040_BOARDCONFIG='Pico2EspBridge'
+            cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+            cmake --build build --parallel
+          "
+
+      # Rescue the compiled firmware from the runner VM
+      - name: Upload Finished Firmware Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GP2040-Pico2EspBridge-Firmware
+          path: build/*.uf2 
+          if-no-files-found: error
