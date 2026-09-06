@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -40,7 +40,7 @@ jobs:
 
       # Rescue the compiled firmware from the runner VM
       - name: Upload Finished Firmware Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: GP2040-${{ matrix.board }}-Firmware
           path: build/*.uf2 
