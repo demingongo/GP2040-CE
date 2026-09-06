@@ -34,7 +34,7 @@
             owner = "raspberrypi";
             repo = "picotool";
             rev = version;
-            sha256 = "sha256-X97Y8P0+N0j/bY/p2l8r7E9eH2/OqI1vFofgHjZ7W7w="; 
+            sha256 = "sha256-w9kVCdwevEjc12NNZWztehp6SSgsd9ehSaxqc9sg4O4="; 
           };
         });
       in
